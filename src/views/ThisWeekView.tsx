@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Trash2, Plus, Link, Loader2, ChefHat, ShoppingCart } from 'lucide-react'
+import { Trash2, Plus, Link, Loader2, ChefHat, ShoppingCart, ClipboardCopy, Check } from 'lucide-react'
 import { useWeekMeals, weekLabel } from '../hooks/useWeekMeals'
 import { useNavigate } from 'react-router-dom'
 
@@ -10,6 +10,14 @@ export default function ThisWeekView() {
   const [url, setUrl] = useState('')
   const [importing, setImporting] = useState(false)
   const [error, setError] = useState('')
+  const [copied, setCopied] = useState<string | null>(null)
+
+  const copyIngredients = (mealId: string, ingredients: { name: string }[]) => {
+    const text = ingredients.map(i => i.name).join('\n')
+    navigator.clipboard.writeText(text)
+    setCopied(mealId)
+    setTimeout(() => setCopied(null), 2000)
+  }
 
   const handleImport = async () => {
     if (!url.trim()) return
@@ -51,22 +59,37 @@ export default function ThisWeekView() {
         </div>
       ) : (
         <>
-          {meals.map(meal => (
-            <div key={meal.id} style={s.card}>
-              {meal.recipe?.image_url && (
-                <img src={meal.recipe.image_url} alt="" style={s.img} />
-              )}
-              <div style={s.cardBody}>
-                <p style={s.title}>{meal.recipe?.title ?? 'Unknown'}</p>
-                {meal.recipe?.cook_time_minutes && (
-                  <p style={s.meta}>{meal.recipe.cook_time_minutes} min · {meal.recipe.servings ?? '?'} servings</p>
+          {meals.map(meal => {
+            const url = meal.recipe?.external_id
+            return (
+              <div key={meal.id} style={s.card}>
+                {meal.recipe?.image_url && (
+                  <img src={meal.recipe.image_url} alt="" style={s.img} />
                 )}
+                <div
+                  style={{ ...s.cardBody, cursor: url ? 'pointer' : 'default' }}
+                  onClick={() => url && window.open(url, '_blank', 'noopener')}
+                >
+                  <p style={s.title}>{meal.recipe?.title ?? 'Unknown'}</p>
+                  {meal.recipe?.cook_time_minutes && (
+                    <p style={s.meta}>{meal.recipe.cook_time_minutes} min · {meal.recipe.servings ?? '?'} servings</p>
+                  )}
+                </div>
+                {meal.recipe?.ingredients?.length > 0 && (
+                  <button
+                    style={s.iconBtn}
+                    onClick={() => copyIngredients(meal.id, meal.recipe!.ingredients)}
+                    title="Copy ingredients"
+                  >
+                    {copied === meal.id ? <Check size={16} color="#4ade80" /> : <ClipboardCopy size={16} />}
+                  </button>
+                )}
+                <button style={s.removeBtn} onClick={() => removeMeal(meal.id)}>
+                  <Trash2 size={16} />
+                </button>
               </div>
-              <button style={s.removeBtn} onClick={() => removeMeal(meal.id)}>
-                <Trash2 size={16} />
-              </button>
-            </div>
-          ))}
+            )
+          })}
           <button style={s.shoppingBtn} onClick={() => navigate('/shopping')}>
             <ShoppingCart size={18} /> Build Shopping List
           </button>
@@ -123,6 +146,7 @@ const s: Record<string, React.CSSProperties> = {
   cardBody: { flex: 1, padding: '14px 16px' },
   title: { margin: '0 0 4px', fontSize: '16px', fontWeight: 600, color: '#f9fafb' },
   meta: { margin: 0, fontSize: '12px', color: '#6b7280' },
+  iconBtn: { background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', padding: '16px', borderLeft: '1px solid #374151', display: 'flex' },
   removeBtn: { background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', padding: '16px', borderLeft: '1px solid #374151' },
   shoppingBtn: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '16px', background: '#f97316', border: 'none', borderRadius: '14px', color: '#fff', fontSize: '16px', fontWeight: 600, cursor: 'pointer', marginTop: '16px' },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end', zIndex: 50 },

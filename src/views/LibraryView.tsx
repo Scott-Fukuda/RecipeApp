@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Plus, Check, BookOpen, Loader2, SquarePen } from 'lucide-react'
+import { Search, Plus, Check, BookOpen, Loader2, SquarePen, ClipboardCopy } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useWeekMeals } from '../hooks/useWeekMeals'
 import type { Recipe } from '../lib/supabase'
@@ -13,6 +13,14 @@ export default function LibraryView() {
   const [adding, setAdding] = useState<string | null>(null)
   const [added, setAdded] = useState<Set<string>>(new Set())
   const { meals, addFromLibrary } = useWeekMeals()
+  const [copied, setCopied] = useState<string | null>(null)
+
+  const copyIngredients = (recipeId: string, ingredients: { name: string }[]) => {
+    const text = ingredients.map(i => i.name).join('\n')
+    navigator.clipboard.writeText(text)
+    setCopied(recipeId)
+    setTimeout(() => setCopied(null), 2000)
+  }
 
   useEffect(() => {
     supabase
@@ -77,12 +85,16 @@ export default function LibraryView() {
         filtered.map(recipe => {
           const isAdded = added.has(recipe.id)
           const isAdding = adding === recipe.id
+          const url = recipe.external_id
           return (
             <div key={recipe.id} style={s.card}>
               {recipe.image_url && (
                 <img src={recipe.image_url} alt="" style={s.img} />
               )}
-              <div style={s.cardBody}>
+              <div
+                style={{ ...s.cardBody, cursor: url ? 'pointer' : 'default' }}
+                onClick={() => url && window.open(url, '_blank', 'noopener')}
+              >
                 <p style={s.title}>{recipe.title}</p>
                 {(recipe.cook_time_minutes || recipe.servings) && (
                   <p style={s.meta}>
@@ -93,6 +105,17 @@ export default function LibraryView() {
                   </p>
                 )}
               </div>
+              {recipe.ingredients?.length > 0 && (
+                <button
+                  style={s.clipBtn}
+                  onClick={() => copyIngredients(recipe.id, recipe.ingredients)}
+                  title="Copy ingredients"
+                >
+                  {copied === recipe.id
+                    ? <Check size={15} color="#4ade80" />
+                    : <ClipboardCopy size={15} color="#6b7280" />}
+                </button>
+              )}
               <button
                 style={{ ...s.addBtn, background: isAdded ? '#14532d' : '#1e3a5f' }}
                 onClick={() => !isAdded && handleAdd(recipe)}
@@ -128,5 +151,6 @@ const s: Record<string, React.CSSProperties> = {
   cardBody: { flex: 1, padding: '14px 16px' },
   title: { margin: '0 0 4px', fontSize: '15px', fontWeight: 600, color: '#f9fafb' },
   meta: { margin: 0, fontSize: '12px', color: '#6b7280' },
+  clipBtn: { background: 'none', border: 'none', cursor: 'pointer', padding: '10px', display: 'flex', alignItems: 'center', flexShrink: 0 },
   addBtn: { border: 'none', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginRight: '14px', flexShrink: 0 },
 }
