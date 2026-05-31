@@ -21,19 +21,25 @@ export default function PastWeeksView() {
         weekKeys.map(weekStart => (
           <div key={weekStart} style={s.section}>
             <p style={s.weekLabel}>{weekLabel(weekStart)}</p>
-            {weeks[weekStart].map(meal => (
-              <div key={meal.id} style={s.card}>
-                {meal.recipe?.image_url && (
-                  <img src={meal.recipe.image_url} alt="" style={s.img} />
-                )}
-                <div style={s.cardBody}>
-                  <p style={s.title}>{meal.recipe?.title ?? 'Unknown'}</p>
-                  {meal.recipe?.cook_time_minutes && (
-                    <p style={s.meta}>{meal.recipe.cook_time_minutes} min · {meal.recipe.servings ?? '?'} servings</p>
+            {weeks[weekStart].map(meal => {
+              const url = meal.recipe?.external_id
+              return (
+                <div key={meal.id} style={s.card}>
+                  {meal.recipe?.image_url && (
+                    <img src={meal.recipe.image_url} alt="" style={s.img} />
                   )}
+                  <div
+                    style={{ ...s.cardBody, cursor: url ? 'pointer' : 'default' }}
+                    onClick={() => url && window.open(url, '_blank', 'noopener')}
+                  >
+                    <p style={s.title}>{meal.recipe?.title ?? 'Unknown'}</p>
+                    {meal.recipe?.cook_time_minutes && (
+                      <p style={s.meta}>{meal.recipe.cook_time_minutes} min · {meal.recipe.servings ?? '?'} servings</p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         ))
       )}
