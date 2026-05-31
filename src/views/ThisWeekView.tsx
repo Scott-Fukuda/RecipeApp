@@ -10,13 +10,13 @@ export default function ThisWeekView() {
   const [url, setUrl] = useState('')
   const [importing, setImporting] = useState(false)
   const [error, setError] = useState('')
-  const [copied, setCopied] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
-  const copyIngredients = (mealId: string, ingredients: { name: string }[]) => {
-    const text = ingredients.map(i => i.name).join('\n')
-    navigator.clipboard.writeText(text)
-    setCopied(mealId)
-    setTimeout(() => setCopied(null), 2000)
+  const copyGroceryList = () => {
+    const names = meals.flatMap(m => m.recipe?.ingredients ?? []).map(i => i.name).filter(Boolean)
+    navigator.clipboard.writeText(names.join('\n'))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   const handleImport = async () => {
@@ -60,39 +60,36 @@ export default function ThisWeekView() {
       ) : (
         <>
           {meals.map(meal => {
-            const url = meal.recipe?.external_id
+            const recipeUrl = meal.recipe?.external_id
             return (
               <div key={meal.id} style={s.card}>
                 {meal.recipe?.image_url && (
                   <img src={meal.recipe.image_url} alt="" style={s.img} />
                 )}
                 <div
-                  style={{ ...s.cardBody, cursor: url ? 'pointer' : 'default' }}
-                  onClick={() => url && window.open(url, '_blank', 'noopener')}
+                  style={{ ...s.cardBody, cursor: recipeUrl ? 'pointer' : 'default' }}
+                  onClick={() => recipeUrl && window.open(recipeUrl, '_blank', 'noopener')}
                 >
                   <p style={s.title}>{meal.recipe?.title ?? 'Unknown'}</p>
                   {meal.recipe?.cook_time_minutes && (
                     <p style={s.meta}>{meal.recipe.cook_time_minutes} min · {meal.recipe.servings ?? '?'} servings</p>
                   )}
                 </div>
-                {meal.recipe?.ingredients?.length > 0 && (
-                  <button
-                    style={s.iconBtn}
-                    onClick={() => copyIngredients(meal.id, meal.recipe!.ingredients)}
-                    title="Copy ingredients"
-                  >
-                    {copied === meal.id ? <Check size={16} color="#4ade80" /> : <ClipboardCopy size={16} />}
-                  </button>
-                )}
                 <button style={s.removeBtn} onClick={() => removeMeal(meal.id)}>
                   <Trash2 size={16} />
                 </button>
               </div>
             )
           })}
-          <button style={s.shoppingBtn} onClick={() => navigate('/shopping')}>
-            <ShoppingCart size={18} /> Build Shopping List
-          </button>
+          <div style={s.actions}>
+            <button style={s.copyBtn} onClick={copyGroceryList}>
+              {copied ? <Check size={17} /> : <ClipboardCopy size={17} />}
+              {copied ? 'Copied!' : 'Copy Grocery List'}
+            </button>
+            <button style={s.shoppingBtn} onClick={() => navigate('/shopping')}>
+              <ShoppingCart size={17} /> Shopping List
+            </button>
+          </div>
         </>
       )}
 
@@ -146,9 +143,10 @@ const s: Record<string, React.CSSProperties> = {
   cardBody: { flex: 1, padding: '14px 16px' },
   title: { margin: '0 0 4px', fontSize: '16px', fontWeight: 600, color: '#f9fafb' },
   meta: { margin: 0, fontSize: '12px', color: '#6b7280' },
-  iconBtn: { background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', padding: '16px', borderLeft: '1px solid #374151', display: 'flex' },
-  removeBtn: { background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', padding: '16px', borderLeft: '1px solid #374151' },
-  shoppingBtn: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '16px', background: '#f97316', border: 'none', borderRadius: '14px', color: '#fff', fontSize: '16px', fontWeight: 600, cursor: 'pointer', marginTop: '16px' },
+  removeBtn: { background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', padding: '16px', borderLeft: '1px solid #374151', display: 'flex' },
+  actions: { display: 'flex', gap: '10px', marginTop: '16px' },
+  copyBtn: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '15px', background: '#1f2937', border: '1px solid #374151', borderRadius: '14px', color: '#f9fafb', fontSize: '15px', fontWeight: 600, cursor: 'pointer' },
+  shoppingBtn: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '15px', background: '#f97316', border: 'none', borderRadius: '14px', color: '#fff', fontSize: '15px', fontWeight: 600, cursor: 'pointer' },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end', zIndex: 50 },
   modal: { background: '#1f2937', borderRadius: '20px 20px 0 0', padding: '28px 20px 40px', width: '100%', maxWidth: '700px', margin: '0 auto' },
   modalTitle: { margin: '0 0 6px', fontSize: '20px', fontWeight: 700, color: '#f9fafb' },
