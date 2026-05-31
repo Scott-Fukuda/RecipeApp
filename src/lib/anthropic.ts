@@ -107,9 +107,9 @@ async function parseWithGemini(url: string, html: string): Promise<ImportedRecip
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
-    .slice(0, 6000)
+    .slice(0, 2500)
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' })
   const prompt = `Extract the recipe from this page content (${url}).
 Return ONLY valid JSON, no markdown:
 {"title":"...","description":"...","ingredients":[{"name":"...","amount":"...","unit":"..."}],"instructions":["..."],"cook_time_minutes":30,"servings":4,"image_url":null}
